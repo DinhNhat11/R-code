@@ -2,148 +2,346 @@
 title: "NguyenDinhNhatA9Math2740"
 author: "DinhNhatNguyen"
 date: "2024-11-05"
-output: pdf_document
+output:
+  pdf_document: default
+  word_document: default
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Question 1
+# Question 1
+
+We start by checking the igraph library. If it is not installed, install it.
+
+Then, we loads the igraph library, which provides functions for creating and visualizing graphs in R
 
 ```{r}
-library("igraph")
-
-edges = c("a","b","b","c","c","d","d","e","e","f","f","g","g","h","h","i","i","a","a","j","d","j","g","j","c","e","b","f","e","i","f","h")
-edge_matrix = matrix(edges, nc = 2, byrow = T)
-edge_matrix
-
-plot(graph_from_edgelist(edge_matrix,directed = F))
-
-```
-```{r}
-
-library("igraph")
-
-# Define the edges as a vector of vertex pairs
-edges <- c("a", "b", "b", "c", "c", "d", "d", "e", "e", "f", "f", "g", "g", "h", "h", "i", "i", "a", 
-           "a", "j", "d", "j", "g", "j", "c", "e", "b", "f", "e", "i", "f", "h")
-
-# Convert the edge list to a matrix with 2 columns
-edge_matrix <- matrix(edges, nc = 2, byrow = TRUE)
-
-# Create an undirected graph from the edge list
-g <- graph_from_edgelist(edge_matrix, directed = FALSE)
-
-# Specify layout, placing vertex 'j' at the center
-layout <- layout_with_fr(g)
-layout[V(g)$name == "j", ] <- c(0, 0)  # Manually position 'j' at the center
-
-# Plot the graph
-plot(g, layout = layout, vertex.size = 20, vertex.label.color = "black",
-     vertex.color = "skyblue", edge.color = "gray", main = "Graph with Central Node 'j'")
-
-
+if (!require("igraph")) {
+install.packages("igraph")
+}
+library(igraph)
 ```
 
-
-
-
-
+The vector edges represents the edges of the graph, with each pair of consecutive elements corresponding to an edge between two vertices.
 
 ```{r}
-library("igraph")
-
-# Define the edges as specified in the problem
-edges <- c("a", "b", "b", "c", "c", "d", "d", "e", "e", "f", "f", "g", "g", "h", "h", "i", "i", "a", 
-           "a", "j", "d", "j", "g", "j", "c", "e", "b", "f", "e", "i", "f", "h")
-
-# Convert the edge list to a matrix with 2 columns
-edge_matrix <- matrix(edges, nc = 2, byrow = TRUE)
-
-# Create an undirected graph from the edge list
-g <- graph_from_edgelist(edge_matrix, directed = FALSE)
-
-# Customize the vertex names and plot settings
-plot(g, vertex.size = 20, vertex.label.color = "black", vertex.color = "skyblue",
-     edge.color = "gray", main = "Enhanced Graph with Extra Connections")
-
-
-```
-```{r}
-
-library("igraph")
 
 # Define the edges as specified
 edges <- c("a", "b", "b", "c", "c", "d", "d", "e", "e", "f", "f", "g", "g", "h", "h", "i", "i", "a", 
            "a", "j", "d", "j", "g", "j", "c", "e", "b", "f", "e", "i", "f", "h")
-
-# Convert the edge list to a matrix with 2 columns
-edge_matrix <- matrix(edges, nc = 2, byrow = TRUE)
-
-# Create an undirected graph from the edge list
-g <- graph_from_edgelist(edge_matrix, directed = FALSE)
-
-# (a) Eccentricity of vertex 'a'
-eccentricity_a <- eccentricity(g, vids = "a")
-cat("Eccentricity of vertex 'a':", eccentricity_a, "\n")
-
-# (b) Radius of G
-radius_g <- radius(g)
-cat("Radius of G:", radius_g, "\n")
-
-# (c) Diameter of G
-diameter_g <- diameter(g)
-cat("Diameter of G:", diameter_g, "\n")
-
-# (d) Center of G
-center_g <- center(g)
-cat("Center of G:", center_g, "\n")
-
-
-
 ```
+
+The edges vector is converted into a matrix format with two columns using matrix(), which makes it suitable for input into graph_from_edgelist()
+
+
 ```{r}
-library("igraph")
-
-# Define the edges as specified
-edges <- c("a", "b", "b", "c", "c", "d", "d", "e", "e", "f", "f", "g", "g", "h", "h", "i", "i", "a", 
-           "a", "j", "d", "j", "g", "j", "c", "e", "b", "f", "e", "i", "f", "h")
-
 # Convert the edge list to a matrix with 2 columns
 edge_matrix <- matrix(edges, nc = 2, byrow = TRUE)
+```
 
+Then, we creates an undirected graph g from the edge list
+
+graph_from_edgelist() function creates a graph object from a given list of edges, where each edge is represented by a pair of vertices in the list.
+
+```{r}
 # Create an undirected graph from the edge list
 g <- graph_from_edgelist(edge_matrix, directed = FALSE)
+```
 
-# Calculate eccentricities of all vertices
-eccentricities <- eccentricity(g)
+Next, to make it clear, we calculate the geodesic distances between all pairs of vertices in the graph.
 
-# (a) Eccentricity of vertex 'a'
-eccentricity_a <- eccentricities["a"]
-cat("Eccentricity of vertex 'a':", eccentricity_a, "\n")
+The function distances() computes the shortest path lengths (geodesic distances) between each pair of vertices.
 
-# (b) Radius of G (minimum eccentricity)
-radius_g <- min(eccentricities)
-cat("Radius of G:", radius_g, "\n")
-
-# (c) Diameter of G (maximum eccentricity)
-diameter_g <- max(eccentricities)
-cat("Diameter of G:", diameter_g, "\n")
-
-# (d) Center of G (vertices with eccentricity equal to the radius)
-center_g <- names(eccentricities[eccentricities == radius_g])
-cat("Center of G:", center_g, "\n")
-
-
+```{r}
 geodesic_distances <- distances(g)
 
 # Print geodesic distances matrix
 cat("Geodesic Distances Matrix:\n")
 print(geodesic_distances)
-
-# Optionally, find the geodesic distance between specific vertices (e.g., 'a' and 'j')
-distance_a_to_j <- distances(g, v = "a", to = "j")
-cat("Geodesic distance from 'a' to 'j':", distance_a_to_j, "\n")
 ```
 
+eccentricities(): This function computes the eccentricity for each vertex in the graph. 
+
+The eccentricity of a vertex is the greatest distance from that vertex to any other vertex in the graph. 
+
+The result is a named vector. The names correspond to the vertices and the values represent their respective eccentricities.
+
+```{r}
+# Calculate eccentricities of all vertices
+eccentricities <- eccentricity(g)
+```
+
+Then, we retrieves the eccentricity of vertex 'a' from the eccentricities vector.
+
+```{r}
+# (a) Eccentricity of vertex 'a'
+eccentricity_a <- eccentricities["a"]
+cat("Eccentricity of vertex 'a':", eccentricity_a, "\n")
+```
+
+We now calculate the radius  with the vector accentricities we found.
+
+The radius of the graph is the minimum eccentricity among all vertices. It represents the smallest maximum distance from any vertex to all other vertices in the graph. 
+
+Funtion min return the lowest value in a vector
+
+This is the smallest eccentricity value.
+
+```{r}
+# (b) Radius of G (minimum eccentricity)
+radius_g <- min(eccentricities)
+cat("Radius of G:", radius_g, "\n")
+```
+
+Then, we calculate the diameter of the graph with the vector accentricities we found.
+
+The diameter of the graph is the maximum eccentricity of any vertex. It represents the longest shortest path from any vertex to any other vertex in the graph. 
+
+The function max returns the largest value in a vector
+
+This is the largest eccentricity value.
+
+```{r}
+# (c) Diameter of G (maximum eccentricity)
+diameter_g <- max(eccentricities)
+cat("Diameter of G:", diameter_g, "\n")
+```
+
+Finally, we calculate the center of the graph.
+
+ The center of the graph consists of the vertices whose eccentricity is equal to the radius of the graph. These vertices have the shortest possible maximum distance to all other vertices in the graph.
+ 
+We find the center by retrieving the name of the lowest values in the eccentricities vectors. 
+
+```{r}
+# (d) Center of G (vertices with eccentricity equal to the radius)
+center_g <- names(eccentricities[eccentricities == radius_g])
+cat("Center of G:", center_g, "\n")
+
+```
+
+# Problem 2
+
+We start by defining the graph according to the question. Each edge in the graph represents a connection between two vertices. 
+
+We represent these edges using a matrix format, where each row contains two elements: a starting vertex and an ending vertex.
+
+Then we assign default weight of 1 to each edge.
+
+```{r}
+edges <- c("x1", "x2", "x2", "x1", "x2", "x4", "x4", "x3", "x2", "x3", "x3", "x6", "x6", "x5", "x5", "x1")
+edgesMat <- matrix(edges, ncol = 2, byrow = TRUE)
+g <- graph_from_edgelist(edgesMat, directed = TRUE)
+E(g)$weight <- 1  # Assign default weight of 1 to each edge
+```
+
+We can plot the graph to better understand its structure and layout. 
+
+We also make the graph look better: edges have arrowheads sized at 0.5, vertices are colored light blue, vertices have a size of 30, and edges are drawn with a width of 2.
+
+```{r}
+plot(g, edge.arrow.size = 0.5, vertex.color = "lightblue", vertex.size = 30, edge.width = 2)
+```
+
+### The Dijkstra's Algorithm:
+
+**Notes:** Since it is very hard to explain all the algorithm here, I explain it more specifically in the comments of the code
+
+This function implements Dijkstra's algorithm to find the shortest paths from a source vertex to all other vertices in a weighted directed graph.
+
+### Parameters:
+- **graph**: An igraph object representing a directed graph. The graph must have vertex names and edge weights assigned. The weights should be stored in the 'weight' attribute of the edges.
+
+- **source**: A character string representing the name of the source vertex (starting point for the shortest path calculations).
+
+### Returns:
+- A list containing two elements:
+  1. **dist**: A named vector of shortest distances from the source vertex to all other vertices in the graph. The distance is set to Inf (infinity) for vertices that are not reachable from the source.
+  
+  2. **prev**: A named vector of predecessors for each vertex. Each element in the 'prev' vector stores the name of the vertex that precedes the vertex in the shortest path from the source. If a vertex is unreachable, its predecessor is NA.
+
+
+### Initialize distances and previous vertices:
+- We start by assuming all vertices are at an infinite distance (since we don’t know the shortest paths yet), except the source vertex which is set to 0.
+- The **prev** vector keeps track of which vertex led to each other vertex on the shortest path. It starts as NA (meaning no vertex has been visited yet).
+
+### Main Loop (while (length(Q) > 0)):
+- The algorithm runs until all vertices have been processed (i.e., the set Q becomes empty).
+  
+1. **Find the vertex with the minimum distance**: 
+   - We look for the vertex in Q with the smallest distance in the dist vector, which represents the closest unvisited vertex.
+  
+2. **Remove the vertex from Q**: 
+   - Once a vertex is processed, it's removed from the unvisited set.
+  
+3. **Update neighbors**: 
+   - For each neighboring vertex, we check if the distance can be improved by going through the current vertex. If it can, we update the shortest known distance and set the current vertex as its predecessor.
+
+
+
+```{r}
+dijkstra <- function(graph, source) {
+  # Initialize distances and previous vertices for each vertex in the graph
+  
+  # Get all the vertex names in the graph and store it to vertices
+  
+  # This function V(graph)$name retrieve the names
+  # that is assigned to the vertices of the graph.
+  vertices <- V(graph)$name
+  
+  # A vector dist store the shortest distance from the source 
+  # to each other vertex.
+  # Initially, all distances are set to infinity (Inf).
+  # This means no paths have been explored yet.
+  # This will also be the result of the function we will look for.
+  
+  # function rep() creates a vector of infinite values,
+  # with the length equal to the number of vertices.
+  dist <- rep(Inf, length(vertices))  
+  
+  # Assigns the names of the vertices to the elements of the dist vector.
+  # Each element of dist corresponds to a distance to a specific vertex by name.
+  names(dist) <- vertices 
+  
+  # This vector prev stores the previous vertex to each vertex.
+  #It starts as NA for all vertices.This means no paths have been discovered.
+  
+  # function rep() creates a vector of NA values,
+  # with the length equal to the number of vertices.
+  prev <- rep(NA, length(vertices))  
+  
+   # Assign vertex names to previous vertices
+  names(prev) <- vertices 
+  
+  # Set the distance to the source vertex to 0 (since we're starting there)
+  dist[source] <- 0
+  
+  #The variable Q is a list of all the vertices that have not been visited yet.
+  #Initially, all vertices are unvisited. Later, when each vertex is visited,
+  # it will be removed.
+  Q <- vertices  # At the beginning, all vertices are unvisited
+  
+  # Run Dijkstra's algorithm until all vertices are visited (i.e., Q is empty)
+  while (length(Q) > 0) {
+    
+    # First, selects the vertex u from the set Q that has the smallest distance
+    # in the dist vector.
+    #This is the next vertex to proceed. It is closest to the source.
+    
+    # dist[Q] extracts the distances of the unvisited vertices.
+    # which.min(dist[Q]) finds the index of the smallest distance in these
+    # unvisited vertices,and names(dist[Q]) retrieves the names of the vertices
+    
+    u <- names(dist[Q])[which.min(dist[Q])]
+    
+    # Remove u from Q (because we now process it)
+    
+    # function setdiff() returns the elements that are in the first set
+    # but not in the second set
+    Q <- setdiff(Q, u)
+    
+    # Get the neighbors of vertex u (vertices that are directly connected to u)
+    # with outgoing edges.
+    
+    # The neighbors() function in R returns the vertices that are adjacent to a 
+    # specified vertex in a graph with incoming or outgoing edges.
+    neighbors <- neighbors(graph, u, mode = "out")
+    
+    # Loop through each neighbor v of u.
+    
+    # This alternative distance is calculated by adding the distance from the 
+    # source to u and the weight of the edge connecting u to v (edge_weight).
+    # Then comparing this alt with the current distance to v,
+    # and update the shortest path to v if needed.
+    for (v in neighbors$name) {
+      
+      # For each neighbor v, this finds the edge between u and v in the graph.
+      #The get.edge.ids function returns the ID of the edge of u and v.
+      edge_id <- get.edge.ids(graph, c(u, v)) 
+      
+      # Retrieves the weight (or cost) of the edge between u and v.
+      #It uses the edge_id to get the edge and then get the weight attribute.
+      #This  represents the distance or cost of traveling from u to v
+      
+      edge_weight <- E(graph)[edge_id]$weight  
+      
+      # Calculate the alternative distance to v by going through u
+      
+      # dist[u] is the current shortest distance from the source vertex to u.
+      # This shows the total distance to reach v by traveling to u first
+      # then from u to v.
+      alt <- dist[u] + edge_weight  
+      
+      # This checks whether the alt path to vertex v (via u) is shorter
+      # than the current known shortest path to v (stored in dist[v])
+      if (alt < dist[v]) {
+        
+        # If alt is smaller than dist[v] (the old known path),
+        # it means we've found a better path to v through u.
+        # Update the distance to v
+        dist[v] <- alt 
+        
+        # Set u as the predecessor of v (the path to reach v)
+        
+        # The predecessor (prev[v]) keeps track of the previous vertex on the
+        # shortest path to v.
+        # It tells us which vertex we came from to reach v along the shortest
+        # path.
+        prev[v] <- u    
+      }
+    }
+    
+    # Print the current state of dist (distances to each vertex) and prev 
+    # (predecessors) to make it easier to understand
+    
+    # Print the current vertex being processed
+    cat("Current vertex:", u, "\n")  
+    
+    # Print the current shortest distances to all vertices
+    cat("Distances:", dist, "\n")  
+    
+    # Print the predecessors (which vertex led to each)
+    cat("Previous vertices:", prev, "\n\n")  
+  }
+  
+  # After processing all vertices, return a list containing final distance and 
+  # predecessor maps
+  
+  # dist: A vector containing the shortest distances from the source  to all 
+  # other vertices.
+  
+  # prev: A vector. Each entry represents the predecessor vertex for the 
+  # corresponding vertex in the shortest path from the source.
+  
+  # If a vertex is unreachable, its predecessor is NA.
+  list(dist = dist, prev = prev)  
+}
+
+```
+
+We run the dijkstra function with the source vertex "x1". The function outputs the intermediate distances and predecessors at each step.
+
+I try to make it clearer by showing how the algorithm finds shorter paths over time.
+
+```{r}
+# Run Dijkstra's algorithm on the graph with "x1" as the source
+result <- dijkstra(g, "x1")
+```
+
+After the algorithm completes, the `dist` vector holds the shortest distances from the source to each vertex, and `prev` holds the predecessors, allowing us to trace the shortest path.
+
+### Explanation of Output:
+- **dist**: This shows the minimum distance from the source to each vertex.
+- **prev**: This shows the predecessor for each vertex in the shortest path from the source, which can be used to reconstruct the path.
+
+
+```{r}
+# Display final results
+cat("Final shortest distances from source:\n")
+print(result$dist)
+cat("Predecessor map for shortest paths:\n")
+print(result$prev)
+
+```

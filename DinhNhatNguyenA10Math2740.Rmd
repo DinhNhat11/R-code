@@ -1,0 +1,194 @@
+---
+title: "DinhNhatNguyenA10Math2740"
+author: "DinhNhatNguyen"
+date: "2024-11-15"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+library(readr)
+library(tidyr)
+library(igraph)
+# Load datasets
+url_2014 <- "https://raw.githubusercontent.com/julien-arino/math-of-data-science/refs/heads/main/CODE/SF-bikeshare-1-week-2014-07.csv"
+url_2015 <- "https://raw.githubusercontent.com/julien-arino/math-of-data-science/refs/heads/main/CODE/SF-bikeshare-1-week-2015-07.csv"
+
+data_2014 <- read_csv(url_2014)
+data_2015 <- read_csv(url_2015)
+
+# Preview datasets
+head(data_2014)
+head(data_2015)
+```
+# Data cleaning 
+
+### Handle missing values
+
+Check for missing values
+```{r}
+
+summary(data_2014)
+summary(data_2015)
+
+```
+
+Handle them
+
+```{r}
+# Use complete.cases() to remove rows with missing start_station_name or duration_sec
+data_2014 <- data_2014[complete.cases(data_2014$start_station_name, data_2014$duration), ]
+data_2015 <- data_2015[complete.cases(data_2015$start_station_name, data_2015$duration), ]
+
+# Check again after cleaning missing data
+summary(data_2014)
+summary(data_2015)
+
+```
+Remove duplicate
+
+```{r}
+# Check for duplicate rows based on all columns
+data_2014 <- data_2014 %>%
+  distinct()
+
+data_2015 <- data_2015 %>%
+  distinct()
+
+# Verify duplicates removal
+sum(duplicated(data_2014))
+sum(duplicated(data_2015))
+```
+Ensure correct data time
+
+```{r}
+
+data_2014 <- data_2014 %>% filter(duration > 0)
+data_2015 <- data_2015 %>% filter(duration > 0)
+
+data_2014$start_date_yyyymmdd <- ymd(data_2014$start_date_yyyymmdd)
+data_2015$start_date_yyyymmdd <- ymd(data_2015$start_date_yyyymmdd)
+
+summary(data_2014)
+summary(data_2015)
+```
+# Data analyse
+
+### Graph the dataset
+
+
+```{r}
+# Create graphs directly from raw data
+graph_2014 <- graph_from_data_frame(
+  d = subset(data_2014, select = c(start_station_name, end_station_name)),
+  directed = TRUE
+)
+
+graph_2015 <- graph_from_data_frame(
+  d = subset(data_2015, select = c(start_station_name, end_station_name)),
+  directed = TRUE
+)
+
+# Calculate degree centrality (number of connections per station)
+degree_2014 <- degree(graph_2014, mode = "all")
+degree_2015 <- degree(graph_2015, mode = "all")
+
+# Top stations by degree centrality
+top_degree_2014 <- sort(degree_2014, decreasing = TRUE)[1:5]
+top_degree_2015 <- sort(degree_2015, decreasing = TRUE)[1:5]
+
+# Output results
+top_degree_2014
+top_degree_2015
+
+```
+### Statinons with dynamic over time
+
+```{r}
+# Count trips for each station (start and end separately)
+start_counts_2014 <- data_2014 %>%
+  group_by(start_station_name) %>%
+  summarise(start_trips = n(), .groups = "drop")
+
+start_counts_2015 <- data_2015 %>%
+  group_by(start_station_name) %>%
+  summarise(start_trips = n(), .groups = "drop")
+
+# Merge and calculate percentage change
+station_usage_comparison <- full_join(
+  start_counts_2014,
+  start_counts_2015,
+  by = "start_station_name",
+  suffix = c("_2014", "_2015")
+) %>%
+  mutate(
+    start_trips_2014 = replace_na(start_trips_2014, 0),
+    start_trips_2015 = replace_na(start_trips_2015, 0),
+    percent_change = ((start_trips_2015 - start_trips_2014) / start_trips_2014) * 100
+  )
+
+# Output stations with highest and lowest change
+most_increased_usage <- station_usage_comparison %>%
+  arrange(desc(percent_change)) %>%
+  head(5)
+
+most_decreased_usage <- station_usage_comparison %>%
+  arrange(percent_change) %>%
+  head(5)
+
+most_increased_usage
+most_decreased_usage
+```
+
+###  Identifying Critical Stations (Betweenness Centrality)
+
+```{r}
+# Betweenness centrality
+betweenness_2014 <- betweenness(graph_2014)
+betweenness_2015 <- betweenness(graph_2015)
+
+# Top stations by betweenness
+top_betweenness_2014 <- sort(betweenness_2014, decreasing = TRUE)[1:5]
+top_betweenness_2015 <- sort(betweenness_2015, decreasing = TRUE)[1:5]
+
+top_betweenness_2014
+top_betweenness_2015
+```
+### More insight
+```{r}
+library(igraph)
+
+# Create graphs directly from raw data
+graph_2014 <- graph_from_data_frame(
+  d = data_2014 %>% select(start_station_name, end_station_name),
+  directed = TRUE
+)
+
+graph_2015 <- graph_from_data_frame(
+  d = data_2015 %>% select(start_station_name, end_station_name),
+  directed = TRUE
+)
+
+# Calculate diameter, radius, and center for both networks
+
+# For 2014
+diameter_2014 <- diameter(graph_2014)
+radius_2014 <- radius(graph_2014)
+#center_2014 <- center(graph_2014)
+
+# For 2015
+diameter_2015 <- diameter(graph_2015)
+radius_2015 <- radius(graph_2015)
+#center_2015 <- center(graph_2015)
+
+# Output the results
+
+```
