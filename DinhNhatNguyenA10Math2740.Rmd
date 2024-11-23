@@ -9,8 +9,21 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+We start by checking the library. If it is not installed, install it.
 
+Then, we loads the library
 ```{r}
+# List of required libraries
+required_libraries <- c("dplyr", "ggplot2", "lubridate", "readr", "tidyr", "igraph")
+
+# Install and load libraries
+for (lib in required_libraries) {
+  if (!require(lib, character.only = TRUE)) {
+    install.packages(lib)
+  }
+  library(lib, character.only = TRUE)
+}
+
 
 library(dplyr)
 library(ggplot2)
@@ -18,6 +31,13 @@ library(lubridate)
 library(readr)
 library(tidyr)
 library(igraph)
+```
+
+We first loads the two datasets for San Francisco bikeshare usage data for the weeks of July 2014 and 2015 from URLs.
+
+These datasets are read using the read_csv() function from the readr package.
+
+```{r}
 # Load datasets
 url_2014 <- "https://raw.githubusercontent.com/julien-arino/math-of-data-science/refs/heads/main/CODE/SF-bikeshare-1-week-2014-07.csv"
 url_2015 <- "https://raw.githubusercontent.com/julien-arino/math-of-data-science/refs/heads/main/CODE/SF-bikeshare-1-week-2015-07.csv"
@@ -31,9 +51,14 @@ head(data_2015)
 ```
 # Data cleaning 
 
+Next, we perform data cleaning, since this is a minor part, I might give clear explanation in the data analysis part.
+
 ### Handle missing values
 
 Check for missing values
+
+The summary() function checks for any missing values in the columns start_station_name and duration in both datasets.
+
 ```{r}
 
 summary(data_2014)
@@ -42,6 +67,10 @@ summary(data_2015)
 ```
 
 Handle them
+
+The complete.cases() function is used to filter out any rows that have missing values in these columns, ensuring that only complete records are kept.
+
+Then, we call function summary again to confirm that there are no missing values in the cleaned data.
 
 ```{r}
 # Use complete.cases() to remove rows with missing start_station_name or duration_sec
@@ -53,7 +82,13 @@ summary(data_2014)
 summary(data_2015)
 
 ```
-Remove duplicate
+
+Then we remove duplicate.
+
+The distinct() function removes duplicate rows from both datasets based on all columns. 
+
+The sum(duplicated()) function checks how many duplicates were removed to verify the cleaning process.
+
 
 ```{r}
 # Check for duplicate rows based on all columns
@@ -67,7 +102,9 @@ data_2015 <- data_2015 %>%
 sum(duplicated(data_2014))
 sum(duplicated(data_2015))
 ```
-Ensure correct data time
+NExt, we ensure correct data time
+
+The ymd() function from the lubridate package is used to ensure that the start_date_yyyymmdd column is correctly converted to a Date type.
 
 ```{r}
 
@@ -80,9 +117,45 @@ data_2015$start_date_yyyymmdd <- ymd(data_2015$start_date_yyyymmdd)
 summary(data_2014)
 summary(data_2015)
 ```
+Visualize it 
+
+The graph_from_data_frame() function from the igraph package is used to create a directed graph for both 2014 and 2015.
+
+This graph uses the start_station_name and end_station_name as the edges, representing the flow of bikeshare trips between stations.
+
+The plots display the bike network for 2014 and 2015, showing the relationships between start and end stations.
+
+```{r}
+graph_2014 <- graph_from_data_frame(
+  d = data_2014 %>% select(start_station_name, end_station_name),
+  directed = TRUE
+)
+
+graph_2015 <- graph_from_data_frame(
+  d = data_2015 %>% select(start_station_name, end_station_name),
+  directed = TRUE
+)
+plot(graph_2014, 
+     vertex.size = 5, 
+     vertex.label = NA,  # Disable station names
+     edge.arrow.size = 0.5, 
+     main = "San Francisco Bike Network (2014)")
+
+plot(graph_2015, 
+     vertex.size = 5, 
+     vertex.label = NA,  # Disable station names
+     edge.arrow.size = 0.5, 
+     main = "San Francisco Bike Network (2014)")
+```
 # Data analyse
 
 ### Graph the dataset
+
+In this analysis, we created directed graphs from the dataset, with the start and end stations. 
+
+These graphs represent the bike share network.
+
+Each node corresponds to a bike station, and each directed edge indicates a trip from one station to another.
 
 
 ```{r}
@@ -96,8 +169,34 @@ graph_2015 <- graph_from_data_frame(
   d = subset(data_2015, select = c(start_station_name, end_station_name)),
   directed = TRUE
 )
+```
 
-# Calculate degree centrality (number of connections per station)
+First, we calculate the degree which measures the number of connections a station has (which are edges adjacent to each vertex). A station with a higher degree centrality is more "connected" in the network. This means that it has a higher number of incoming and outgoing trips.
+
+This helps identify high-traffic stations. Therefore based on this, hubs might be potentially important in the network. we can find in the result that:
+
+
+#### 2014:
+- **San Francisco Caltrain (Townsend at 4th)** – 1253 connections
+- **San Francisco Caltrain 2 (330 Townsend)** – 649 connections
+- **Harry Bridges Plaza (Ferry Building)** – 645 connections
+- **Market at Sansome** – 637 connections
+- **Embarcadero at Sansome** – 584 connections
+
+#### 2015:
+- **San Francisco Caltrain (Townsend at 4th)** – 1086 connections
+- **San Francisco Caltrain 2 (330 Townsend)** – 1010 connections
+- **Harry Bridges Plaza (Ferry Building)** – 831 connections
+- **Embarcadero at Sansome** – 765 connections
+- **2nd at Townsend** – 655 connections
+
+In both years, San Francisco Caltrain (Townsend at 4th),San Francisco Caltrain 2 (330 Townsend), and Harry Bridges Plaza (Ferry Building) remained the most three connected stations. These might still be 3 central role in the network. 
+
+However, there were significant shifts in the rankings: in 2015, San Francisco Caltrain 2 (330 Townsend) and Harry Bridges Plaza (Ferry Building) retained their positions but saw varying degrees of change, while Market at Sansome dropped out of the top five and was replaced by 2nd at Townsend. 
+
+
+```{r}
+# Calculate degree (number of connections per station)
 degree_2014 <- degree(graph_2014, mode = "all")
 degree_2015 <- degree(graph_2015, mode = "all")
 
@@ -110,45 +209,32 @@ top_degree_2014
 top_degree_2015
 
 ```
-### Statinons with dynamic over time
-
-```{r}
-# Count trips for each station (start and end separately)
-start_counts_2014 <- data_2014 %>%
-  group_by(start_station_name) %>%
-  summarise(start_trips = n(), .groups = "drop")
-
-start_counts_2015 <- data_2015 %>%
-  group_by(start_station_name) %>%
-  summarise(start_trips = n(), .groups = "drop")
-
-# Merge and calculate percentage change
-station_usage_comparison <- full_join(
-  start_counts_2014,
-  start_counts_2015,
-  by = "start_station_name",
-  suffix = c("_2014", "_2015")
-) %>%
-  mutate(
-    start_trips_2014 = replace_na(start_trips_2014, 0),
-    start_trips_2015 = replace_na(start_trips_2015, 0),
-    percent_change = ((start_trips_2015 - start_trips_2014) / start_trips_2014) * 100
-  )
-
-# Output stations with highest and lowest change
-most_increased_usage <- station_usage_comparison %>%
-  arrange(desc(percent_change)) %>%
-  head(5)
-
-most_decreased_usage <- station_usage_comparison %>%
-  arrange(percent_change) %>%
-  head(5)
-
-most_increased_usage
-most_decreased_usage
-```
 
 ###  Identifying Critical Stations (Betweenness Centrality)
+
+Betweenness centrality measures the number of times a station lies on the shortest path between two other stations. This is also another factor when considering the importance of the station. Stations with high betweenness centrality are considered important to the traffic.
+
+In this part, we use built-in function betweenness to calcualte, then we sort bu sort function and choose the top 5 station to analyze. We can see that:
+
+#### 2014:
+- **San Jose Diridon Caltrain Station** – 87.06
+- **San Francisco Caltrain (Townsend at 4th)** – 86.45
+- **California Ave Caltrain Station** – 55.99
+- **Broadway at Main** – 29.82
+- **Cowper at University** – 29.18
+
+#### 2015:
+- **San Jose Diridon Caltrain Station** – 72.70
+- **Mountain View Caltrain Station** – 62.05
+- **San Francisco Caltrain (Townsend at 4th)** – 50.12
+- **San Francisco Caltrain 2 (330 Townsend)** – 49.31
+- **California Ave Caltrain Station** – 32.47
+
+In 2014, San Jose Diridon Caltrain Station was the most central station for betweenness. The second is San Francisco Caltrain (Townsend at 4th). These stations are the key hubs for connecting various parts of the network.
+
+In 2015, there were noticeable shifts in the network's structure. San Jose Diridon Caltrain Station remained the top station, but Mountain View Caltrain Station emerged as the second most central station.This might mean that there is a potential increase in activity or importance in that area. San Francisco Caltrain (Townsend at 4th) and San Francisco Caltrain 2 (330 Townsend) both remained significant, but the emergence of San Francisco Caltrain 2 (330 Townsend) in the top five shows a possible growth in usage or better connectivity between these two Caltrain stations.
+
+These stations are essential for the flow of the network because they connect to multiple routes. If these stations experience downtime or service disruptions, the network could become fragmented, so ensuring they are always operational is crucial.
 
 ```{r}
 # Betweenness centrality
@@ -162,20 +248,20 @@ top_betweenness_2015 <- sort(betweenness_2015, decreasing = TRUE)[1:5]
 top_betweenness_2014
 top_betweenness_2015
 ```
+
 ### More insight
+
+The diameter of a network is the longest shortest path between any two nodes, while the radius is the shortest of the longest shortest paths. The center is the set of nodes with the shortest path to all other nodes.
+
+Network Diameter and Radius: These information help us understand the overall spread of the network. A smaller diameter show that the network is well-connected.This means that  stations is closer to each other. A large radius shows that some stations are far apart from the rest.This means areas with lower connectivity.
+
+For 2014, the diameter is 6, meaning the longest shortest path between two stations is 6 hops. For 2015, the diameter is 4, indicating the network became slightly more connected with fewer hops.
+
+Both 2014 and 2015 networks have a radius of 1. This shows there are stations that can reach all other stations in just one hop, indicating a high connectivity.
+
+In summary, the 2015 network has slightly improved in terms of diameter (reduced). Also, the  connectivity (radius) remains high and stable in both years.
+
 ```{r}
-library(igraph)
-
-# Create graphs directly from raw data
-graph_2014 <- graph_from_data_frame(
-  d = data_2014 %>% select(start_station_name, end_station_name),
-  directed = TRUE
-)
-
-graph_2015 <- graph_from_data_frame(
-  d = data_2015 %>% select(start_station_name, end_station_name),
-  directed = TRUE
-)
 
 # Calculate diameter, radius, and center for both networks
 
@@ -190,5 +276,132 @@ radius_2015 <- radius(graph_2015)
 #center_2015 <- center(graph_2015)
 
 # Output the results
+diameter_2014
+radius_2014
+
+diameter_2015
+radius_2015
+```
+Here are the stations involved in the diameter (the longest shortest path) for each network.
+
+#### 2014:
+- **Mezes Park**
+- **Redwood City Caltrain Station**
+- **Cowper at University**
+- **Park at Olive**
+- **San Antonio Caltrain Station**
+- **Mountain View City Hall**
+- **Evelyn Park and Ride**
+
+#### 2015:
+- **Evelyn Park and Ride**
+- **Mountain View Caltrain Station**
+- **California Ave Caltrain Station**
+- **Cowper at University**
+- **Park at Olive**
+
+We use funtion get_parameter: returns all the stations (nodes) involved in the longest shortest path (diameter) for the 2014 dataset.
+
+These stations represent the endpoints and intermediate points of the longest shortest path (diameter) in each year’s network.
+
+The 2014 network has a longer diameter path with 7 stations, while the 2015 network has a diameter with 5 stations.
+
+This suggests that in 2015, the network may have become more connected, reducing the number of hops needed to travel between the farthest points.
+
+This also shows an improvement in the construction of the bike network over 1 year.
+
+```{r}
+# Find all shortest path distances between nodes
+dist_matrix_2014 <- distances(graph_2014)
+dist_matrix_2015 <- distances(graph_2015)
+
+# Find the pair of nodes with the longest shortest path (i.e., diameter)
+max_dist_2014 <- max(dist_matrix_2014)  # Maximum distance (diameter)
+max_dist_2015 <- max(dist_matrix_2015)  # Maximum distance (diameter)
+
+# Get all stations involved in the diameter (i.e., the longest path)
+diameter_stations_2014 <- get_diameter(graph_2014)  # List all stations in the diameter for 2014
+diameter_stations_2015 <- get_diameter(graph_2015)  # List all stations in the diameter for 2015
+
+# Display the stations involved in the diameter
+diameter_stations_2014
+diameter_stations_2015
+
+
+```
+
+Eccentricity: For each station, we calculate its eccentricity, which is the maximum shortest path distance from that station to any other station in the graph.
+
+Minimum Eccentricity: The central stations will have the smallest eccentricity, meaning they are closest to all other stations in terms of shortest path.
+
+#### 2014:
+- **Harry Bridges Plaza (Ferry Building)**
+- **San Jose Diridon Caltrain Station**
+- **San Francisco Caltrain 2 (330 Townsend)**
+- **San Francisco Caltrain (Townsend at 4th)**
+- **Market at Sansome**
+- **Powell Street BART**
+- **Temporary Transbay Terminal (Howard at Beale)**
+
+#### 2015:
+- **Harry Bridges Plaza (Ferry Building)**
+- **San Francisco Caltrain (Townsend at 4th)**
+- **San Francisco Caltrain 2 (330 Townsend)**
+- **Powell Street BART**
+- **Commercial at Montgomery**
+- **Redwood City Caltrain Station**
+
+
+The stations with the minimum eccentricity in 2014 and 2015 are the ones that have the smallest maximum distance to all other stations.This means they are the most central 
+
+In 2014, key stations such as "Harry Bridges Plaza (Ferry Building)" and "San Francisco Caltrain (Townsend at 4th)" were central to the network. In 2015, these stations continued to be central. There are also new additions like "Powell Street BART" and "Redwood City Caltrain Station". This shows a shift in connections across the Bay Area.
+
+The presence of these central hubs across both years shows that the network expands to accommodate growing demand and connectivity.
+
+```{r}
+# Get the eccentricity of each station (maximum distance to any other station)
+eccentricity_2014 <- eccentricity(graph_2014)
+eccentricity_2015 <- eccentricity(graph_2015)
+
+# Find the minimum eccentricity (which corresponds to the radius)
+min_eccentricity_2014 <- min(eccentricity_2014)
+min_eccentricity_2015 <- min(eccentricity_2015)
+
+# Find the stations that have the minimum eccentricity (central stations)
+center_stations_2014 <- which(eccentricity_2014 == min_eccentricity_2014)
+center_stations_2015 <- which(eccentricity_2015 == min_eccentricity_2015)
+
+# Display the station names corresponding to the central stations
+center_station_names_2014 <- V(graph_2014)$name[center_stations_2014]
+center_station_names_2015 <- V(graph_2015)$name[center_stations_2015]
+
+center_station_names_2014
+center_station_names_2015
+
+
+```
+
+
+Finally, we visualized the bike share networks for 2014 and 2015. The plot shows nodes (stations) connected by edges (trips).
+
+Since showing the name of vertices will cover the graph, I just indicates the general view of the graph.
+
+
+```{r}
+par(mfrow = c(1, 2)) # Split plot area into two
+
+# 2014 Network
+plot(graph_2014, 
+     vertex.size = degree_2014 / max(degree_2014) * 10,
+     vertex.label = NA, 
+     edge.arrow.size = 0.3, 
+     main = "Bike Network (2014)")
+
+# 2015 Network
+plot(graph_2015, 
+     vertex.size = degree_2015 / max(degree_2015) * 10,
+     vertex.label = NA, 
+     edge.arrow.size = 0.3, 
+     main = "Bike Network (2015)")
 
 ```
